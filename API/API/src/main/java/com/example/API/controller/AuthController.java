@@ -12,7 +12,10 @@ import com.example.API.dto.LoginDto;
 import com.example.API.dto.ResetPasswordDto;
 import com.example.API.dto.UserDto;
 import com.example.API.dto.VerifyOtpDto;
+import com.example.API.model.Otp;
 import com.example.API.model.User;
+import com.example.API.repository.UserRepository;
+import com.example.API.service.OtpService;
 import com.example.API.service.UserService;
 
 import jakarta.mail.MessagingException;
@@ -53,14 +56,6 @@ public class AuthController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid credentials or account not activated.");
         }
     }
+   
 
-    @PostMapping("/reset-password")
-    public ResponseEntity<String> resetPassword(@RequestBody ResetPasswordDto resetPasswordDto) {
-        boolean isReset = userService.resetPassword(resetPasswordDto.getEmail(), resetPasswordDto.getOtpCode(), resetPasswordDto.getNewPassword());
-        if (isReset) {
-            return ResponseEntity.ok("Password reset successful.");
-        } else {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid OTP or expired.");
-        }
-    }
 }

@@ -50,7 +50,7 @@ public class UserService {
         if (otp != null && otp.getOtpCode().equals(otpCode) && !isOtpExpired(otp.getExpiryTime())) {
             User user = userRepository.findByEmail(email);
             if (user != null) {
-                user.setActivated(false); // Kích hoạt tài khoản
+                user.setActivated(true); // Kích hoạt tài khoản
                 userRepository.save(user);
 
                 otpRepository.delete(otp); // Xóa OTP sau khi xác nhận
@@ -71,7 +71,7 @@ public class UserService {
         }
         return null;
     }
-
+/*
     public boolean resetPassword(String email, String otpCode, String newPassword) {
         if (otpService.verifyOtp(email, otpCode)) {
             User user = userRepository.findByEmail(email);
@@ -82,5 +82,5 @@ public class UserService {
             }
         }
         return false;
-    }
+    }*/
 }
