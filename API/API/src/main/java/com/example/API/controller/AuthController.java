@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.example.API.dto.EmailRequest;
 import com.example.API.dto.LoginDto;
 import com.example.API.dto.ResetPasswordDto;
 import com.example.API.dto.UserDto;
@@ -26,7 +27,10 @@ public class AuthController {
 
     @Autowired
     private UserService userService;
-
+    
+    @Autowired
+    private OtpService otpService;
+    
     @PostMapping("/register")
     public ResponseEntity<String> register(@RequestBody UserDto userDto) {
         try {
@@ -36,6 +40,19 @@ public class AuthController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error sending OTP.");
         }
     }
+    @PostMapping("/send")
+    public ResponseEntity<String> send(@RequestBody UserDto userDto) {
+        try {
+            userService.email(userDto.getEmail());
+            return ResponseEntity.ok("OTP đã được gửi. Vui lòng kiểm tra email của bạn.");
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        } catch (MessagingException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Lỗi khi gửi OTP.");
+        }
+    }
+
+    
     @PostMapping("/verify-otp")
     public ResponseEntity<String> verifyOtp(@RequestBody VerifyOtpDto verifyOtpDto) {
         boolean isVerified = userService.verifyOtp(verifyOtpDto.getEmail(), verifyOtpDto.getOtpCode());
@@ -45,7 +62,7 @@ public class AuthController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid or expired OTP.");
         }
     }
-
+    
     
     @PostMapping("/login")
     public ResponseEntity<String> login(@RequestBody LoginDto loginDto) {
@@ -57,5 +74,12 @@ public class AuthController {
         }
     }
    
-
+    @PostMapping("/reset-password")
+    public ResponseEntity<?> resetPassword(@RequestBody ResetPasswordDto request) {
+        boolean success = userService.resetPassword(request.getEmail(), request.getOtpCode(), request.getNewPassword());
+        if (success) {
+            return ResponseEntity.ok("Mật khẩu đã được đặt lại thành công.");
+        }
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("OTP không hợp lệ hoặc tài khoản không tồn tại.");
+    }
 }
