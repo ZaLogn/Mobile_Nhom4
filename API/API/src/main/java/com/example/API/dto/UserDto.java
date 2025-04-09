@@ -4,7 +4,15 @@ public class UserDto {
     private String username;
     private String password;
     private String email;
+    private String image;
 
+    public String getImage() {
+        return image;
+    }
+
+    public void setImage(String image) {
+        this.image = image;
+    }
     public String getUsername() {
         return username;
     }

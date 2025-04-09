@@ -17,6 +17,16 @@ public class User {
     private String password;
     private String email;
     private boolean isActivated;
+    private String image;
+
+    public String getImage() {
+        return image;
+    }
+
+    public void setImage(String image) {
+        this.image = image;
+    }
+
     public boolean isActivated() {
 		return isActivated;
 	}

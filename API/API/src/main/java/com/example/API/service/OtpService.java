@@ -28,6 +28,8 @@ public class OtpService {
         otp.setExpiryTime(LocalDateTime.now().plusMinutes(5));  // OTP hết hạn sau 5 phút
         otpRepository.save(otp);
     }
+    
+    
 
     public boolean verifyOtp(String email, String otpCode) {
         Otp otp = otpRepository.findByEmailAndOtpCode(email, otpCode);

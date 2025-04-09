@@ -39,7 +39,18 @@ public class UserService {
 
         return user;
     }
-   
+    public void email(String email) throws MessagingException {
+        User user = userRepository.findByEmail(email);
+        
+        if (user == null) {
+            throw new IllegalArgumentException("Email chưa được đăng ký.");
+        }
+
+        String otpCode = otpService.generateOtp();
+        otpService.saveOtp(email, otpCode);
+        emailService.sendOtp(email, otpCode);
+    }
+
 
     @Autowired
     private OtpRepository otpRepository; // Repository để làm việc với bảng OTP
@@ -71,7 +82,7 @@ public class UserService {
         }
         return null;
     }
-/*
+
     public boolean resetPassword(String email, String otpCode, String newPassword) {
         if (otpService.verifyOtp(email, otpCode)) {
             User user = userRepository.findByEmail(email);
@@ -82,5 +93,5 @@ public class UserService {
             }
         }
         return false;
-    }*/
+    }
 }
