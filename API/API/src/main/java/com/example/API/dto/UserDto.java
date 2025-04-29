@@ -1,32 +1,21 @@
 package com.example.API.dto;
 
 public class UserDto {
-    private String username;
-    private String password;
+    private String hoTen;
     private String email;
-    private String image;
+    private String sdt;
+    private String diaChi;
+    private String matKhau;
+    private String avatar;
 
-    public String getImage() {
-        return image;
+    // Getter và Setter
+
+    public String getHoTen() {
+        return hoTen;
     }
 
-    public void setImage(String image) {
-        this.image = image;
-    }
-    public String getUsername() {
-        return username;
-    }
-
-    public void setUsername(String username) {
-        this.username = username;
-    }
-
-    public String getPassword() {
-        return password;
-    }
-
-    public void setPassword(String password) {
-        this.password = password;
+    public void setHoTen(String hoTen) {
+        this.hoTen = hoTen;
     }
 
     public String getEmail() {
@@ -35,5 +24,37 @@ public class UserDto {
 
     public void setEmail(String email) {
         this.email = email;
+    }
+
+    public String getSdt() {
+        return sdt;
+    }
+
+    public void setSdt(String sdt) {
+        this.sdt = sdt;
+    }
+
+    public String getDiaChi() {
+        return diaChi;
+    }
+
+    public void setDiaChi(String diaChi) {
+        this.diaChi = diaChi;
+    }
+
+    public String getMatKhau() {
+        return matKhau;
+    }
+
+    public void setMatKhau(String matKhau) {
+        this.matKhau = matKhau;
+    }
+
+    public String getAvatar() {
+        return avatar;
+    }
+
+    public void setAvatar(String avatar) {
+        this.avatar = avatar;
     }
 }

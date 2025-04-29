@@ -12,7 +12,6 @@ import com.example.API.repository.UserRepository;
 
 import jakarta.mail.MessagingException;
 
-
 @Service
 public class UserService {
 
@@ -25,23 +24,37 @@ public class UserService {
     @Autowired
     private OtpService otpService;
 
-    public User registerUser(String username, String password, String email) throws MessagingException {
+    @Autowired
+    private OtpRepository otpRepository;
+
+    // Đăng ký người dùng
+    public User registerUser(String hoTen, String matKhau, String email, String sdt, String diaChi, String avatar) throws MessagingException {
+        // Kiểm tra email đã tồn tại chưa
+        if (userRepository.findByEmail(email) != null) {
+            throw new IllegalArgumentException("Email đã tồn tại!");
+        }
+
         User user = new User();
-        user.setUsername(username);
-        user.setPassword(password);  // Mã hóa mật khẩu nếu cần
+        user.setHoTen(hoTen);
+        user.setMatKhau(matKhau); // lưu thẳng mật khẩu thuần
         user.setEmail(email);
-        user.setActivated(false);
+        user.setSdt(sdt);
+        user.setDiaChi(diaChi);
+        user.setAvatar(avatar);
+
         userRepository.save(user);
 
-        String otpCode = otpService.generateOtp();
-        otpService.saveOtp(email, otpCode);
-        emailService.sendOtp(email, otpCode);
+        // Gửi OTP để xác thực email (nếu cần)
+        //String otpCode = otpService.generateOtp();
+        //otpService.saveOtp(email, otpCode);
+        //emailService.sendOtp(email, otpCode);
 
         return user;
     }
-    public void email(String email) throws MessagingException {
+
+    // Gửi lại OTP
+    public void sendOtpToEmail(String email) throws MessagingException {
         User user = userRepository.findByEmail(email);
-        
         if (user == null) {
             throw new IllegalArgumentException("Email chưa được đăng ký.");
         }
@@ -51,47 +64,54 @@ public class UserService {
         emailService.sendOtp(email, otpCode);
     }
 
-
-    @Autowired
-    private OtpRepository otpRepository; // Repository để làm việc với bảng OTP
-
+    // Xác thực OTP
     public boolean verifyOtp(String email, String otpCode) {
-        Otp otp = otpRepository.findByEmailAndOtpCode(email,otpCode);
-        
-        if (otp != null && otp.getOtpCode().equals(otpCode) && !isOtpExpired(otp.getExpiryTime())) {
-            User user = userRepository.findByEmail(email);
-            if (user != null) {
-                user.setActivated(true); // Kích hoạt tài khoản
-                userRepository.save(user);
+        Otp otp = otpRepository.findByEmailAndOtpCode(email, otpCode);
 
-                otpRepository.delete(otp); // Xóa OTP sau khi xác nhận
-                return true;
-            }
-        }
-        return false;
+        return otp != null && otp.getOtpCode().equals(otpCode) && !isOtpExpired(otp.getExpiryTime());
     }
+
 
     private boolean isOtpExpired(LocalDateTime expiryTime) {
         return expiryTime.isBefore(LocalDateTime.now());
     }
 
-    public User loginUser(String email, String password) {
+    // Đăng nhập người dùng
+    public User loginUser(String email, String matKhau) {
         User user = userRepository.findByEmail(email);
-        if (user != null && user.getPassword().equals(password) && user.isActivated()) {
+        if (user != null && user.getMatKhau().equals(matKhau)) {
             return user;
         }
         return null;
     }
 
+    // Đổi mật khẩu thông qua OTP
     public boolean resetPassword(String email, String otpCode, String newPassword) {
-        if (otpService.verifyOtp(email, otpCode)) {
-            User user = userRepository.findByEmail(email);
-            if (user != null) {
-                user.setPassword(newPassword);
-                userRepository.save(user);
-                return true;
-            }
+    	Otp otp = otpRepository.findByEmailAndOtpCode(email, otpCode);
+
+        if (otp == null) {
+            throw new IllegalArgumentException("Mã OTP không hợp lệ.");
         }
-        return false;
+
+        if (isOtpExpired(otp.getExpiryTime())) {
+            throw new IllegalArgumentException("Mã OTP đã hết hạn.");
+        }
+
+        User user = userRepository.findByEmail(email);
+        if (user == null) {
+            throw new IllegalArgumentException("Người dùng không tồn tại.");
+        }
+
+        user.setMatKhau(newPassword);
+        userRepository.save(user);
+
+        // Xóa OTP sau khi đặt lại mật khẩu thành công
+        otpRepository.delete(otp);
+
+        return true;
     }
+
+   
+
+
 }

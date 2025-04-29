@@ -1,25 +1,18 @@
 package com.example.API.controller;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-
 import com.example.API.dto.EmailRequest;
 import com.example.API.dto.LoginDto;
 import com.example.API.dto.ResetPasswordDto;
-import com.example.API.dto.UserDto;
-import com.example.API.dto.VerifyOtpDto;
-import com.example.API.model.Otp;
+import com.example.API.dto.SendOtpRequest;
 import com.example.API.model.User;
-import com.example.API.repository.UserRepository;
-import com.example.API.service.OtpService;
 import com.example.API.service.UserService;
-
 import jakarta.mail.MessagingException;
+
+import java.util.Map;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/auth")
@@ -27,59 +20,65 @@ public class AuthController {
 
     @Autowired
     private UserService userService;
-    
-    @Autowired
-    private OtpService otpService;
-    
-    @PostMapping("/register")
-    public ResponseEntity<String> register(@RequestBody UserDto userDto) {
-        try {
-            userService.registerUser(userDto.getUsername(), userDto.getPassword(), userDto.getEmail());
-            return ResponseEntity.ok("Registration successful. Please check your email for the OTP.");
-        } catch (MessagingException e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error sending OTP.");
-        }
-    }
-    @PostMapping("/send")
-    public ResponseEntity<String> send(@RequestBody UserDto userDto) {
-        try {
-            userService.email(userDto.getEmail());
-            return ResponseEntity.ok("OTP đã được gửi. Vui lòng kiểm tra email của bạn.");
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
-        } catch (MessagingException e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Lỗi khi gửi OTP.");
+
+    @PostMapping("/login")
+    public ResponseEntity<?> login(@RequestBody LoginDto loginDto) {
+        User user = userService.loginUser(loginDto.getEmail(), loginDto.getMatKhau());
+        if (user != null) {
+            return ResponseEntity.ok(user);
+        } else {
+            return ResponseEntity.badRequest().body("Sai email hoặc mật khẩu.");
         }
     }
 
-    
+    @PostMapping("/register")
+    public ResponseEntity<?> register(@RequestBody User user) throws MessagingException {
+        User registeredUser = userService.registerUser(
+                user.getHoTen(),
+                user.getMatKhau(),
+                user.getEmail(),
+                user.getSdt(),
+                user.getDiaChi(),
+                user.getAvatar()
+        );
+        return ResponseEntity.ok(registeredUser);
+    }
+
+    /** Gửi OTP nhận JSON {"email":"..."} */
+    @PostMapping("/send")
+    public ResponseEntity<?> sendOtp(@RequestBody SendOtpRequest request) throws MessagingException {
+        String email = request.getEmail();
+        userService.sendOtpToEmail(email);
+        return ResponseEntity.ok("Đã gửi OTP tới email.");
+    }
+/**
     @PostMapping("/verify-otp")
-    public ResponseEntity<String> verifyOtp(@RequestBody VerifyOtpDto verifyOtpDto) {
-        boolean isVerified = userService.verifyOtp(verifyOtpDto.getEmail(), verifyOtpDto.getOtpCode());
-        if (isVerified) {
-            return ResponseEntity.ok("OTP verified successfully. Account activated.");
+    public ResponseEntity<?> verifyOtp(@RequestBody Map<String, String> request) {
+        String email = request.get("email");
+        String otp = request.get("otp");
+
+        boolean verified = userService.verifyOtp(email, otp);
+        if (verified) {
+            return ResponseEntity.ok("Xác thực OTP thành công.");
         } else {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid or expired OTP.");
+            return ResponseEntity.badRequest().body("OTP không hợp lệ hoặc đã hết hạn.");
         }
-    }
-    
-    
-    @PostMapping("/login")
-    public ResponseEntity<String> login(@RequestBody LoginDto loginDto) {
-        User user = userService.loginUser(loginDto.getEmail(), loginDto.getPassword());
-        if (user != null) {
-            return ResponseEntity.ok("Login successful.");
-        } else {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid credentials or account not activated.");
-        }
-    }
-   
+    }**/
+
+
+    // API đặt lại mật khẩu bằng OTP
+    /** Reset password (cũng có thể tiếp tục dùng JSON) */
     @PostMapping("/reset-password")
     public ResponseEntity<?> resetPassword(@RequestBody ResetPasswordDto request) {
-        boolean success = userService.resetPassword(request.getEmail(), request.getOtpCode(), request.getNewPassword());
+        boolean success = userService.resetPassword(
+            request.getEmail(),
+            request.getOtpCode(),
+            request.getNewPassword()
+        );
         if (success) {
-            return ResponseEntity.ok("Mật khẩu đã được đặt lại thành công.");
+            return ResponseEntity.ok("Đặt lại mật khẩu thành công.");
+        } else {
+            return ResponseEntity.badRequest().body("Đặt lại mật khẩu thất bại.");
         }
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("OTP không hợp lệ hoặc tài khoản không tồn tại.");
     }
 }
